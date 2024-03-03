@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PVC</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css" />
+    <style>
+        .conteneur {
+            display: flex;
+            flex-direction: row;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #network,
+        #network1 {
+            width: 50%;
+            height: 100%;
+            border: 1px solid black;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="conteneur">
+        <div id="network"></div>
+        <div id="network1"></div>
+    </div>
+    <script src="./matrice.js"></script>
+</body>
+
+</html>
