@@ -329,8 +329,59 @@ function trouverParasite(arcSolution, ancienParasite, noeud) {
 }
 
 //TRACER GRAPHE ARBORESCENCE
-function tracerGrapheArbre(params) {
+function tracerGrapheArbre(donnee) {
+    let sommet = [];
+    let arcarbre = [];
+    // Noeud racine
+    var rootNode = { id: 'R', label: 'R' };
+    let tempRoot = null;
+    sommet.push(rootNode);
 
+    for (let i = 0; i < donnee.length; i++) {
+        for (let j = 0; j < donnee[i].length; j++) {
+            let elem = donnee[i][j];
+            let node = { id: elem.arc, label: elem.arc };
+            sommet.push(node);
+
+            let edge = { from: rootNode.id, to: elem.arc, label: String(elem.value) };
+            arcarbre.push(edge);
+            if (elem.status) {
+                tempRoot = node;
+            }
+        }
+        rootNode = tempRoot;
+    }
+    function getColor(node) {
+        if (node.label.includes("NON ")) {
+            return "red";
+        } else {
+            return "green";
+        }
+    }
+
+    // Parcours des noeuds pour définir la couleur
+    for (let node of sommet) {
+        if (node.id != 'R') {
+            node.color = {
+                background: getColor(node)
+            }
+        }
+    }
+
+    var container = document.getElementById("network");
+    var data = {
+        nodes: sommet,
+        edges: arcarbre
+    };
+    var options = {
+        layout: {
+            hierarchical: {
+                direction: 'UD', // Haut vers bas
+                sortMethod: 'directed' // Trier selon les arêtes
+            }
+        }
+    };
+    var network = new vis.Network(container, data, options);
 }
 //TRACER GRAPHE CHEMIN
 function tracerGrapheChemin(arcsSolution, valeursDesArcs, nodes) {
@@ -355,15 +406,13 @@ function tracerGrapheChemin(arcsSolution, valeursDesArcs, nodes) {
             hierarchical: false,
         },
         physics: {
-            enabled: false,
+            enabled: true,
         },
     };
 
     // Initialisation du réseau vis.js avec les données du graphe
-    var container = document.getElementById('network');
-    var container1 = document.getElementById('network1');
+    var container = document.getElementById('network1');
     var network = new vis.Network(container, graphData, options);
-    var network1 = new vis.Network(container1, graphData, options);
     return network;
 }
 
@@ -382,10 +431,10 @@ function prendreValeursArcs(matriceInitial, solution) {
 ////////////////////////////////////* *************************Résoudre Problèmes de voyageur de COMMERCE******************************* */\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 function main() {
     //Donnée Fonction CREERMATRICE {Donnée ALEATOIRE}
-    /*let pvc = creeMatrice(8);
+    /*let pvc = creeMatrice(7);
     let sommet = pvc[0].slice(1);*/
     //Donnée PVC Leçon
-    let pvc = [
+    /*let pvc = [
         ['', 'A', 'B', 'C', 'D', 'E', 'F'],
         ['A', Infinity, 6, 7, 3, 1, 3],
         ['B', 7, Infinity, 8, 2, 9, 7],
@@ -394,9 +443,9 @@ function main() {
         ['E', 7, 7, 6, 7, Infinity, 4],
         ['F', 9, 8, 8, 5, 3, Infinity]
     ];
-    let sommet = ['A', 'B', 'C', 'D', 'E', 'F'];
+    let sommet = ['A', 'B', 'C', 'D', 'E', 'F'];*/
     //Donnée TD3
-    /*let pvc = [
+    let pvc = [
         ['', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'],
         ['A', Infinity, 2, Infinity, 8, Infinity, Infinity, 7, 5],
         ['B', 8, Infinity, 9, 4, Infinity, Infinity, Infinity, Infinity],
@@ -407,10 +456,11 @@ function main() {
         ['G', Infinity, Infinity, 6, Infinity, Infinity, 2, Infinity, Infinity],
         ['H', Infinity, 4, Infinity, Infinity, Infinity, Infinity, 3, Infinity]
     ];
-    let sommet = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];*/
+    let sommet = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
     affichageMatrice(pvc);
     let copiePVC = pvc.map(row => row.slice());
     let chemin = [];
+    let arbre = [];
     let valeurs = [];
     let ancParasite = [];
 
@@ -422,6 +472,8 @@ function main() {
     let racine = calculRacine(minimumLigne, minimumColonne);
 
     do {
+        let niveauArbre = [];
+        let cheminChoisi = true;
         //BLOC 2
         let resultatRegret = calculeRegret(matriceDesCoutReduites);
         let { maximumMinimorumValue, maximumMinimorumPosition } = trouverMaximumMinimorum(resultatRegret);
@@ -471,13 +523,15 @@ function main() {
             chemin.pop();
             ancParasite.pop();
             racine = nonArc;
+            cheminChoisi = false;
         }
-
+        niveauArbre.push({ arc: 'NON ' + maximumMinimorumPosition, status: !cheminChoisi, value: nonArc }, { arc: maximumMinimorumPosition, status: cheminChoisi, value: arc });
+        arbre.push(niveauArbre);
     } while (!(matriceDesCoutReduites.length == 1 && matriceDesCoutReduites[0].length == 1));
-
     console.log("Le coût minimale de voyage est : " + racine);
     valeurs = prendreValeursArcs(copiePVC, chemin);
     tracerGrapheChemin(chemin, valeurs, sommet);
+    tracerGrapheArbre(arbre);
 
 }
 main();
