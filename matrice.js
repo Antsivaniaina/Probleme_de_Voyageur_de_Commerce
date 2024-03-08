@@ -7,7 +7,7 @@ function creationMatriceVide(matrice) {
             if (i === 0 || j === 0) {
                 nouvelleMatrice[i][j] = matrice[i][j];
             } else {
-                nouvelleMatrice[i][j] = 0;
+                nouvelleMatrice[i][j] = -Infinity;
             }
         }
     }
@@ -18,22 +18,17 @@ function creationMatriceVide(matrice) {
 // CREATION DE LA MATRICE CARREE DE DIAGONALE INFINIE AVEC LA 1ere LIGNE ET COLONNE AVEC DES LETTRES DE L'ALPHABET
 function creeMatrice(taille) {
     let matrice = [];
-
-    // Remplir la matrice avec des valeurs aléatoires
     for (let i = 0; i < taille + 1; i++) {
         let row = [];
         for (let j = 0; j < taille + 1; j++) {
             if (i === 0 && j === 0) {
                 row.push('');
             } else if (i === 0 || j === 0) {
-                // Remplir la première ligne et la première colonne avec des lettres de l'alphabet
-                let letter = String.fromCharCode(65 + Math.max(i, j) - 1); // ASCII code for 'A' est 65
+                let letter = String.fromCharCode(65 + Math.max(i, j) - 1); // ASCII 'A' est 65
                 row.push(letter);
             } else if (i === j) {
-                // Si l'élément est sur la diagonale principale, le remplir avec Infinity
                 row.push(Infinity);
             } else {
-                // Générer une valeur aléatoire entre 0 et 9 (vous pouvez ajuster cela selon vos besoins)
                 row.push(Math.floor(Math.random() * 9) + 1);
             }
         }
@@ -41,7 +36,6 @@ function creeMatrice(taille) {
     }
     return matrice;
 }
-
 
 //AFFICHAGE DE LA MATRICE
 function affichageMatrice(matrice) {
@@ -147,9 +141,9 @@ function soustraireMinico(matriceSoustraitLigne, minCol) {
 
 //CALCUL REGRET
 function calculeRegret(matriceSoustraitColonne) {
-    const resultat = creationMatriceVide(matriceSoustraitColonne);
-    const nbLignes = matriceSoustraitColonne.length;
-    const nbColonnes = matriceSoustraitColonne[0].length;
+    let resultat = creationMatriceVide(matriceSoustraitColonne);
+    let nbLignes = matriceSoustraitColonne.length;
+    let nbColonnes = matriceSoustraitColonne[0].length;
     for (let i = 1; i < nbLignes; i++) {
         for (let j = 1; j < nbColonnes; j++) {
             if (matriceSoustraitColonne[i][j] == 0) {
@@ -239,7 +233,7 @@ function bloquerArc(matriceSource, arcABloquer) {
     return matriceSource;
 }
 
-//L'EXISTANCE D'UN 0 PAR LIGNE ET PAR COLONNE
+//VERIFIER L'EXISTANCE D'UN 0 PAR LIGNE ET PAR COLONNE
 function verifierZeroLigneEtZeroColonne(matrice) {
     const nbLignes = matrice.length;
     const nbColonnes = matrice[0].length;
@@ -332,39 +326,59 @@ function trouverParasite(arcSolution, ancienParasite, noeud) {
 function tracerGrapheArbre(donnee) {
     let sommet = [];
     let arcarbre = [];
+    let racineValue = donnee[0][0].valueSommet - donnee[0][0].valueArc;
     // Noeud racine
-    var rootNode = { id: 'R', label: 'R' };
-    let tempRoot = null;
-    sommet.push(rootNode);
+    var racine = { id: 'R', label: 'R = ' + racineValue };
+    let racineTemporaire = null;
+    sommet.push(racine);
 
     for (let i = 0; i < donnee.length; i++) {
         for (let j = 0; j < donnee[i].length; j++) {
             let elem = donnee[i][j];
-            let node = { id: elem.arc, label: elem.arc };
+            let node = { id: elem.arc, label: elem.arc + " = " + String(elem.valueSommet) };
             sommet.push(node);
 
-            let edge = { from: rootNode.id, to: elem.arc, label: String(elem.value) };
-            arcarbre.push(edge);
+            let edge = { from: racine.id, to: elem.arc, label: String(elem.valueArc) };
+
             if (elem.status) {
-                tempRoot = node;
+                racineTemporaire = node;
             }
+            arcarbre.push(edge);
         }
-        rootNode = tempRoot;
+        racine = racineTemporaire;
     }
+
     function getColor(node) {
-        if (node.label.includes("NON ")) {
+        if (node.label.includes("NON")) {
             return "red";
         } else {
             return "green";
         }
     }
 
-    // Parcours des noeuds pour définir la couleur
+    //Proprieté des sommet
     for (let node of sommet) {
+        //Défini la couleur des noeuds
         if (node.id != 'R') {
             node.color = {
                 background: getColor(node)
             }
+        }
+        //Enlever le 'NON' et changer en barre au dessus des arcs
+        if (node.label.includes("NON")) {
+            node.label = node.label.replace('NON', '');
+            node.label = node.label.replace(/^.{2}/gm, match => match + '\u0305');
+        }
+        //Changer le mot Infinity en son symbol
+        if (node.label.includes("Infinity")) {
+            node.label = node.label.replace('Infinity', '∞');
+        }
+    }
+
+    // Parcours des arcs pour changer la valeur Infinity en son symbol
+    for (let edge of arcarbre) {
+        if (edge.label === 'Infinity') {
+            edge.label = '∞';
         }
     }
 
@@ -377,23 +391,23 @@ function tracerGrapheArbre(donnee) {
         layout: {
             hierarchical: {
                 direction: 'UD', // Haut vers bas
-                sortMethod: 'directed' // Trier selon les arêtes
+                sortMethod: 'directed'
             }
-        }
+        },
     };
-    var network = new vis.Network(container, data, options);
+    new vis.Network(container, data, options);
 }
+
 //TRACER GRAPHE CHEMIN
-function tracerGrapheChemin(arcsSolution, valeursDesArcs, nodes) {
+function tracerGrapheChemin(arcsSolution, valeursDesArcs, noeuds) {
 
     var edgesArray = [];
-    // Parcours des données d'entrée
+
     arcsSolution.forEach(function (edge, index) {
         edgesArray.push({ from: edge[0], to: edge[1], label: String(valeursDesArcs[index]), arrows: "to" });
     });
 
-    // Création d'un tableau de nœuds à partir de l'objet de nœuds
-    var nodesArray = nodes.map(function (node) {
+    var nodesArray = noeuds.map(function (node) {
         return { id: node, label: node };
     });
 
@@ -401,6 +415,7 @@ function tracerGrapheChemin(arcsSolution, valeursDesArcs, nodes) {
         nodes: nodesArray,
         edges: edgesArray
     };
+
     var options = {
         layout: {
             hierarchical: false,
@@ -410,10 +425,8 @@ function tracerGrapheChemin(arcsSolution, valeursDesArcs, nodes) {
         },
     };
 
-    // Initialisation du réseau vis.js avec les données du graphe
     var container = document.getElementById('network1');
-    var network = new vis.Network(container, graphData, options);
-    return network;
+    new vis.Network(container, graphData, options);
 }
 
 //PRENDRE LES VALEURS DES ARCS DE LA SOLUTION DANS LA MATRICE INITIAL
@@ -428,11 +441,59 @@ function prendreValeursArcs(matriceInitial, solution) {
     return valeurs;
 }
 
+function afficherMatriceSurHtml(matrice) {
+    var conteneur = document.getElementById("afficheMatrice");
+    var table = document.createElement("table");
+
+    matrice.forEach(function (ligne) {
+        let row = document.createElement("tr");
+        ligne.forEach(function (cellData) {
+            let cell = document.createElement("td");
+            if (typeof cellData == "string") {
+                cell.classList.add("LigneColonne");
+            }
+            if (cellData === Infinity) {
+                cellData = '∞';
+                cell.classList.add("valeurInfinie");
+            }
+            cell.textContent = cellData;
+            row.appendChild(cell);
+        });
+        table.appendChild(row);
+    });
+
+    conteneur.appendChild(table);
+}
+
 ////////////////////////////////////* *************************Résoudre Problèmes de voyageur de COMMERCE******************************* */\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 function main() {
     //Donnée Fonction CREERMATRICE {Donnée ALEATOIRE}
-    /*let pvc = creeMatrice(7);
-    let sommet = pvc[0].slice(1);*/
+    let pvc = creeMatrice(4);
+    //Donnée nisy BUG
+    /*let pvc = [
+        ['', 'A', 'B', 'C', 'D', 'E', 'F', 'G'],
+        ['A', Infinity, 5, 5, 2, 3, 8, 2],
+        ['B', 3, Infinity, 9, 5, 5, 2, 7],
+        ['C', 4, 6, Infinity, 4, 4, 9, 6],
+        ['D', 5, 6, 4, Infinity, 7, 5, 4],
+        ['E', 2, 5, 4, 4, Infinity, 6, 9],
+        ['F', 8, 5, 1, 6, 3, Infinity, 2],
+        ['G', 4, 3, 5, 1, 2, 8, Infinity],
+    ];*/
+    /*let pvc = [
+        ['', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'],
+        ['A', Infinity, 1, 5, 9, 5, 1, 3, 6, 3, 3],
+        ['B', 1, Infinity, 5, 1, 3, 7, 8, 2, 5, 8],
+        ['C', 3, 5, Infinity, 1, 3, 5, 1, 5, 1, 1],
+        ['D', 7, 8, 6, Infinity, 5, 5, 4, 7, 6, 6],
+        ['E', 3, 2, 9, 5, Infinity, 1, 2, 9, 6, 8],
+        ['F', 1, 2, 9, 6, 3, Infinity, 4, 7, 1, 1],
+        ['G', 2, 5, 3, 6, 3, 7, Infinity, 7, 3, 1],
+        ['H', 3, 8, 1, 6, 8, 5, 7, Infinity, 1, 3],
+        ['I', 2, 4, 5, 2, 2, 8, 4, 3, Infinity, 2],
+        ['J', 6, 3, 9, 5, 1, 3, 5, 2, 9, Infinity],
+    ];*/
+
     //Donnée PVC Leçon
     /*let pvc = [
         ['', 'A', 'B', 'C', 'D', 'E', 'F'],
@@ -442,10 +503,10 @@ function main() {
         ['D', 8, 6, 5, Infinity, 5, 1],
         ['E', 7, 7, 6, 7, Infinity, 4],
         ['F', 9, 8, 8, 5, 3, Infinity]
-    ];
-    let sommet = ['A', 'B', 'C', 'D', 'E', 'F'];*/
+    ];*/
+
     //Donnée TD3
-    let pvc = [
+    /*let pvc = [
         ['', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'],
         ['A', Infinity, 2, Infinity, 8, Infinity, Infinity, 7, 5],
         ['B', 8, Infinity, 9, 4, Infinity, Infinity, Infinity, Infinity],
@@ -455,14 +516,16 @@ function main() {
         ['F', 4, Infinity, Infinity, 6, 4, Infinity, 5, Infinity],
         ['G', Infinity, Infinity, 6, Infinity, Infinity, 2, Infinity, Infinity],
         ['H', Infinity, 4, Infinity, Infinity, Infinity, Infinity, 3, Infinity]
-    ];
-    let sommet = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+    ];*/
+
+    let sommet = pvc[0].slice(1);
     affichageMatrice(pvc);
     let copiePVC = pvc.map(row => row.slice());
     let chemin = [];
     let arbre = [];
     let valeurs = [];
     let ancParasite = [];
+    let sommeDesValeursSoustraites = 0;
 
     //BLOC 1
     let minimumLigne = trouverMinimumLigne(pvc);
@@ -474,6 +537,7 @@ function main() {
     do {
         let niveauArbre = [];
         let cheminChoisi = true;
+
         //BLOC 2
         let resultatRegret = calculeRegret(matriceDesCoutReduites);
         let { maximumMinimorumValue, maximumMinimorumPosition } = trouverMaximumMinimorum(resultatRegret);
@@ -495,17 +559,17 @@ function main() {
             ancParasite.push(arcParasite);
         }
 
+        nonArc = racine + maximumMinimorumValue;
+
         if (verifierZeroLigneEtZeroColonne(matriceDesCoutReduites)) {
-            nonArc = racine + maximumMinimorumValue;
             arc = racine;
         } else {
-            nonArc = racine + maximumMinimorumValue;
-
             //BLOC 1
             let miniLiTest = trouverMinimumLigne(matriceDesCoutReduites);
             let resultatSoustraitMiniLiTest = soustraireMinili(matriceDesCoutReduites, miniLiTest);
             let minicoTest = trouverMinimumColonne(resultatSoustraitMiniLiTest);
-            arc = racine + calculRacine(miniLiTest, minicoTest);
+            sommeDesValeursSoustraites = calculRacine(miniLiTest, minicoTest);
+            arc = racine + sommeDesValeursSoustraites;
 
         }
 
@@ -525,11 +589,17 @@ function main() {
             racine = nonArc;
             cheminChoisi = false;
         }
-        niveauArbre.push({ arc: 'NON ' + maximumMinimorumPosition, status: !cheminChoisi, value: nonArc }, { arc: maximumMinimorumPosition, status: cheminChoisi, value: arc });
+
+        niveauArbre.push({ arc: 'NON ' + maximumMinimorumPosition, status: !cheminChoisi, valueSommet: nonArc, valueArc: maximumMinimorumValue }, { arc: maximumMinimorumPosition, status: cheminChoisi, valueSommet: arc, valueArc: sommeDesValeursSoustraites });
         arbre.push(niveauArbre);
+        sommeDesValeursSoustraites = 0;
     } while (!(matriceDesCoutReduites.length == 1 && matriceDesCoutReduites[0].length == 1));
+
+    console.table("Solution : " + chemin);
+    console.table("Arcs parasites : " + ancParasite);
     console.log("Le coût minimale de voyage est : " + racine);
     valeurs = prendreValeursArcs(copiePVC, chemin);
+    afficherMatriceSurHtml(copiePVC);
     tracerGrapheChemin(chemin, valeurs, sommet);
     tracerGrapheArbre(arbre);
 
