@@ -7,54 +7,87 @@
     <title>PVC</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
     <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css" />
-    <style>
-        .conteneur {
-            display: flex;
-            flex-direction: row;
-            width: 100vw;
-            height: 100vh;
-        }
-
-        #network,
-        #network1 {
-            width: 50%;
-            height: 100%;
-            border: 1px solid black;
-        }
-
-        table {
-            border-collapse: collapse;
-        }
-
-        td,
-        th {
-            border: 1px solid black;
-            padding: 8px;
-            text-align: center;
-        }
-
-        .valeurInfinie {
-            background-color: grey;
-        }
-
-        .LigneColonne {
-            background-color: aquamarine;
-        }
-    </style>
+    <link rel="stylesheet" href="./css/bootstrap.css">
+    <link rel="stylesheet" href="./css/bootstrap.min.css">
+    <link rel="stylesheet" href="./css/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="./css/bootstrap-theme.min.css">
+    <link rel="stylesheet" href="./css/style.css">
 </head>
 
 <body>
-    <center>
-        <h1>Résolution PVC</h1>
-    </center>
-    <center>
-        <div id="afficheMatrice"></div><br><br>
-    </center>
-    <div class="conteneur">
-        <div id="network"></div>
-        <div id="network1"></div>
+
+    <div class="page">
+        <center>
+            <h1>Résolution PVC</h1>
+        </center>
+        <div class="row" id="creerPvc">
+            <div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
+                <label for="tailleMatricePvc">Entrer le nombre de ville :</label>
+                <input type="number" class="form-control" id="tailleMatricePvc" name="tailleMatricePvc" min="2"><br>
+                <button class="btn btn-primary" id="creertab">Créer un tableau</button>
+            </div>
+        </div><br>
+        <div class="row" id="boutonControlePvc">
+            <div class="col-xs-9 col-sm-9 col-md-9 col-lg-9">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3>Tableau des données</h3>
+                        <div class="boutonTableau">
+                            <button type="button" class="btn btn-success btn-circle" id="ajouterVille"
+                                data-toggle="tooltip" data-placement="top" title="Ajouter une ville"><i
+                                    class="fa fa-plus-circle"></i></button>
+                            <button type="button" class="btn btn-danger btn-circle" id="supprimerVille"
+                                data-toggle="tooltip" data-placement="top" title="Supprimer une ville"><i
+                                    class="fa fa-times-circle"></i></button>
+                            <select name="ville" id="listVille"></select>
+                            <button type="button" class="btn btn-primary btn-circle" id="recreerPvc"
+                                data-toggle="tooltip" data-placement="top" title="Recréer un tableau"><i
+                                    class="fa fa-gear"></i></button>
+                            <button class="btn btn-success" id="resoudrepvc">Résoudre</button>
+                        </div><br>
+                    </div><br>
+                    <div class="panel-body">
+                        <div class="table-responsive" id="matricepvc">
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            <div class="col-md-3 col-sm-3 col-xs-3 col-lg-3">
+                <div class="row d-flex flex-row">
+                    <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                        <div class="panel panel-primary text-center no-boder bg-color-green green">
+                            <div class="panel-left pull-left green">
+                                <i class="fa fa-flag fa-5x"></i>
+                            </div>
+                            <div class="panel-right">
+                                <h3 id="coutMinimal">0</h3>
+                                <strong> Coût minimal</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 conteneur-graphe">
+                        <div class="legende-graphe">Graphe du chemin minimale</div>
+                        <div class=" text-center no-boder panel-vis-graph" id="network">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div><br>
+        <center>
+            <div class="affichageGraphe">
+                <h3>GRAPHE PVC</h3>
+                <div class="conteneur">
+                    <div id="network1"></div>
+                    <div id="network2"></div>
+                </div>
+            </div>
+        </center>
     </div>
-    <script src="./matrice.js"></script>
+
+    <script src="./js/jquery-3.3.1.min.js"></script>
+    <script src="./js/bootstrap.min.js"></script>
+    <script src="./js/matrice.js"></script>
 </body>
 
 </html>
