@@ -156,7 +156,7 @@ function calculeRegret(matriceSoustraitColonne) {
     return resultat;
 }
 
-//CALCUL DE DU RACINE DE L'ARBRE ( SOMME(minili et minico))
+//CALCUL DU RACINE DE L'ARBRE ( SOMME(minili et minico))
 function calculRacine(minili, minico) {
     let racine = 0;
     for (let i = 0; i < minili.length; i++) {
@@ -323,8 +323,8 @@ function trouverParasite(arcSolution, ancienParasite, noeud) {
 }
 
 //TRACER GRAPHE ARBORESCENCE
-function tracerGrapheArbre(donnee) {
-    var container = document.getElementById("network1");
+function tracerGrapheArbre(donnee, id) {
+    var container = document.getElementById(id);
     let sommet = [];
     let arcarbre = [];
     let racineValue = donnee[0][1].valueSommet - donnee[0][1].valueArc;
@@ -374,8 +374,6 @@ function tracerGrapheArbre(donnee) {
             edge.label = '∞';
         }
     }
-
-
     var data = {
         nodes: sommet,
         edges: arcarbre
@@ -387,12 +385,19 @@ function tracerGrapheArbre(donnee) {
                 sortMethod: 'directed'
             }
         },
+        edges: {
+            length: 50,
+        },
+        nodes: {
+            shape: "circle",
+        }
+
     };
     new vis.Network(container, data, options);
 }
 
 //TRACER GRAPHE CHEMIN
-function tracerGrapheChemin(arcsSolution, valeursDesArcs, noeuds) {
+function tracerGrapheChemin(arcsSolution, valeursDesArcs, noeuds, id) {
 
     var edgesArray = [];
 
@@ -418,11 +423,10 @@ function tracerGrapheChemin(arcsSolution, valeursDesArcs, noeuds) {
         },
     };
 
-    var container = document.getElementById('network');
-    var container2 = document.getElementById('network2');
+    var container = document.getElementById(id);
     new vis.Network(container, graphData, options);
-    new vis.Network(container2, graphData, options);
 }
+
 
 //PRENDRE LES VALEURS DES ARCS DE LA SOLUTION DANS LA MATRICE INITIAL
 function prendreValeursArcs(matriceInitial, solution) {
@@ -434,30 +438,6 @@ function prendreValeursArcs(matriceInitial, solution) {
         valeurs.push(valeur);
     });
     return valeurs;
-}
-
-function afficherMatriceSurHtml(matrice) {
-    var conteneur = document.getElementById("afficheMatrice");
-    var table = document.createElement("table");
-
-    matrice.forEach(function (ligne) {
-        let row = document.createElement("tr");
-        ligne.forEach(function (cellData) {
-            let cell = document.createElement("td");
-            if (typeof cellData == "string") {
-                cell.classList.add("LigneColonne");
-            }
-            if (cellData === Infinity) {
-                cellData = '∞';
-                cell.classList.add("valeurInfinie");
-            }
-            cell.textContent = cellData;
-            row.appendChild(cell);
-        });
-        table.appendChild(row);
-    });
-
-    conteneur.appendChild(table);
 }
 
 ////////////////////////////////////* *************************Résoudre Problèmes de voyageur de COMMERCE******************************* */\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
@@ -495,8 +475,6 @@ function main(pvc) {
         ['I', 2, 4, 5, 2, 2, 8, 4, 3, Infinity, 2],
         ['J', 6, 3, 9, 5, 1, 3, 5, 2, 9, Infinity],
     ];*/
-
-    //Donnée PVC Leçon
     /*let pvc = [
         ['', 'A', 'B', 'C', 'D', 'E', 'F'],
         ['A', Infinity, 6, 7, 3, 1, 3],
@@ -534,11 +512,11 @@ function main(pvc) {
     let minimumColonne = trouverMinimumColonne(resultatSoustraitMinimumLigne);
     let matriceDesCoutReduites = soustraireMinico(resultatSoustraitMinimumLigne, minimumColonne);
     let racine = calculRacine(minimumLigne, minimumColonne);
-
+    let i = 0;
     do {
         let niveauArbre = [];
         let cheminChoisi = true;
-
+        let matriceDesCoutReduitesCopie = matriceDesCoutReduites.map(row => row.slice());
         //BLOC 2
         let resultatRegret = calculeRegret(matriceDesCoutReduites);
         let { maximumMinimorumValue, maximumMinimorumPosition } = trouverMaximumMinimorum(resultatRegret);
@@ -592,27 +570,29 @@ function main(pvc) {
 
         niveauArbre.push({ arc: 'NON ' + maximumMinimorumPosition, status: !cheminChoisi, valueSommet: nonArc, valueArc: maximumMinimorumValue }, { arc: maximumMinimorumPosition, status: cheminChoisi, valueSommet: arc, valueArc: sommeDesValeursSoustraites });
         arbre.push(niveauArbre);
+        valeurs = prendreValeursArcs(copiePVC, chemin);
+        affichageStepByStep(matriceDesCoutReduites, matriceDesCoutReduitesCopie, arcParasite, resultatRegret, maximumMinimorumPosition, chemin, valeurs, sommet, arbre, i);
         sommeDesValeursSoustraites = 0;
+        i++;
     } while (!(matriceDesCoutReduites.length == 1 && matriceDesCoutReduites[0].length == 1));
 
     console.table("Solution : " + chemin);
     console.table("Arcs parasites : " + ancParasite);
     console.log("Le coût minimale de voyage est : " + racine);
-    valeurs = prendreValeursArcs(copiePVC, chemin);
-    tracerGrapheChemin(chemin, valeurs, sommet);
-    tracerGrapheArbre(arbre);
+    tracerGrapheChemin(chemin, valeurs, sommet, 'network');
     return { racine, chemin };
 }
+////////////////////////////////////* *************************************************************************************************** */\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
 //CREER UNE TABLEAU HTML A PARTIR DU NOMBRE DE VILLE DONNER
-function createTableauPvcHTML(nombreddeVille) {
+function createTableauPvcHTML(nombreDeVille) {
 
     var table = $('<table></table>').addClass('table table-bordered');
 
-    for (var i = 0; i < nombreddeVille + 1; i++) {
+    for (var i = 0; i < nombreDeVille + 1; i++) {
         var row = $('<tr></tr>');
 
-        for (var j = 0; j < nombreddeVille + 1; j++) {
+        for (var j = 0; j < nombreDeVille + 1; j++) {
             var cell;
             if (i === 0 && j === 0) {
                 cell = $('<th class="pt-3-half text-center"></th>');
@@ -635,6 +615,157 @@ function createTableauPvcHTML(nombreddeVille) {
     return table;
 }
 
+//Afficher Matrice des Cout réduites sur HTML
+function afficheCoutReduitesSurHTML(matrice, parasite) {
+    var table = document.createElement("table");
+    let source, dest = null;
+    if (!(parasite === null)) {
+        [source, dest] = parasite.split('');
+    }
+    let destIndice = matrice[0].indexOf(dest);
+    matrice.forEach(function (ligne, indiceLigne) {
+        let row = document.createElement("tr");
+        let sourceIndice = ligne[0] === source ? indiceLigne : null;
+        ligne.forEach(function (cellData, indiceColonne) {
+            let cell = document.createElement("td");
+            if (typeof cellData == "string") {
+                cell.classList.add("LigneColonne");
+            }
+            if (cellData === Infinity) {
+                cellData = '∞';
+                cell.classList.add("valeurInfinie");
+            }
+            if (cellData === -Infinity) {
+                cellData = '';
+            }
+            if (indiceLigne === sourceIndice && indiceColonne === destIndice) {
+                cell.classList.add("parasite");
+                cellData = '∞';
+            }
+            if (cellData === 0) {
+                cell.classList.add("valeurRouge");
+            }
+            cell.textContent = cellData;
+            row.appendChild(cell);
+        });
+        table.appendChild(row);
+    });
+
+    return table;
+}
+
+//Afficher Nouvelle Matrice des Cout réduites sur HTML
+function afficheNouvelleCoutReduitesSurHTML(matrice) {
+    var table = document.createElement("table");
+    matrice.forEach(function (ligne) {
+        let row = document.createElement("tr");
+        ligne.forEach(function (cellData) {
+            let cell = document.createElement("td");
+            if (typeof cellData == "string") {
+                cell.classList.add("LigneColonne");
+            }
+            if (cellData === Infinity) {
+                cellData = '∞';
+                cell.classList.add("valeurInfinie");
+            }
+            if (cellData === -Infinity) {
+                cellData = '';
+            }
+            if (cellData === 0) {
+                cell.classList.add("valeurRouge");
+            }
+            cell.textContent = cellData;
+            row.appendChild(cell);
+        });
+        table.appendChild(row);
+    });
+
+    return table;
+}
+
+//Suppresion du Maximum Minimorum
+function afficheSuppressionMaximumMinimorumSurHTML(matrice, parasite, maximumMinimorum) {
+    var table = document.createElement("table");
+    let source, dest = null;
+    let [sourceMax, destMax] = maximumMinimorum.split('');
+    let destIndiceMax = matrice[0].indexOf(destMax);
+    if (!(parasite === null)) {
+        [source, dest] = parasite.split('');
+    }
+    let destIndice = matrice[0].indexOf(dest);
+    matrice.forEach(function (ligne, indiceLigne) {
+        let row = document.createElement("tr");
+        let sourceIndice = ligne[0] === source ? indiceLigne : null;
+        let sourceIndiceMax = ligne[0] === sourceMax ? indiceLigne : null;
+        ligne.forEach(function (cellData, indiceColonne) {
+            let cell = document.createElement("td");
+            if (typeof cellData == "string") {
+                cell.classList.add("LigneColonne");
+            }
+            if (cellData === Infinity) {
+                cellData = '∞';
+                cell.classList.add("valeurInfinie");
+            }
+            if (cellData === -Infinity) {
+                cellData = '';
+            }
+            if (indiceLigne === sourceIndice && indiceColonne === destIndice) {
+                cell.classList.add("parasite");
+                cellData = '∞';
+            }
+            if (cellData === 0) {
+                cell.classList.add("valeurRouge");
+            }
+            if (indiceColonne === destIndiceMax) {
+                cellData = '';
+                cell.classList.add("supprimerCellule");
+            }
+            if (indiceLigne === sourceIndiceMax) {
+                cellData = '';
+                cell.classList.add("supprimerCellule");
+            }
+            cell.textContent = cellData;
+            row.appendChild(cell);
+        });
+        table.appendChild(row);
+    });
+
+    return table;
+}
+
+//Afficher Regret sur HTML
+function afficherRegretSurtHTML(matrice, maximumMinimorum) {
+    var table = document.createElement("table");
+    let [source, dest] = maximumMinimorum.split('');
+    let destIndice = matrice[0].indexOf(dest);
+    matrice.forEach(function (ligne, indiceLigne) {
+        let sourceIndice = ligne[0] === source ? indiceLigne : null;
+        let row = document.createElement("tr");
+        ligne.forEach(function (cellData, indiceColonne) {
+            let cell = document.createElement("td");
+            if (typeof cellData == "string") {
+                cell.classList.add("LigneColonne");
+            }
+            if (cellData === Infinity) {
+                cellData = '∞';
+            }
+            if (cellData === -Infinity) {
+                cellData = '';
+            }
+            if (indiceLigne === sourceIndice && indiceColonne === destIndice) {
+                cell.classList.add("maximumMinimorum");
+            }
+            if (!(indiceLigne === 0 || indiceColonne === 0)) {
+                cell.classList.add("valeurRouge");
+            }
+            cell.textContent = cellData;
+            row.appendChild(cell);
+        });
+        table.appendChild(row);
+    });
+
+    return table;
+}
 //AJOUTER UNE NOUVELLE VILLE {NOUVELLE LIGNE ET COLONNE } SUR LE TABLEAU HTML
 function ajouterUneNouvelleVille(matricePvc) {
     const nbLignes = matricePvc.length;
@@ -741,9 +872,64 @@ function remplirListVille(tableauVille) {
     });
 }
 
+//AFFCHAGE STEP BY STEP
+function affichageStepByStep(nouvelleMatriceDesCoutReduites, coutReduites, arcParasite, matriceRegret, arcMaximumMinimorum, arcSolution, valeurArc, noued, arbre, valID) {
+    let cheminID = 'chemin' + valID.toString();
+    let arbreID = 'arbre' + valID.toString();
+    let coutReduitesID = 'matricesDesCoutsReduits' + valID.toString();
+    let regretID = 'matricesDesRegrets' + valID.toString();
+    arcParasite = arcParasite === null ? 'Aucune' : arcParasite;
+    var descriptionMCR = $('<br><span>').text('Bloquer l\'arc parasite : ' + arcParasite);
+    var descriptionR = $('<br><span>').text('Maximum Minimorum : ' + arcMaximumMinimorum);
+
+    // Création de la première colonne
+    var col1 = $('<div>').addClass('col-md-3 col-sm-4').append(
+        $('<center>').append(
+            $('<div>').addClass('panel panel-default').append(
+                $('<div>').addClass('panel-heading').text('Matrice des coûts réduites'),
+                $('<div>').addClass('panel-body').attr('id', coutReduitesID),
+                $('<br><div>').addClass('panel-footer').text('Suppression de l\'arc : ' + arcMaximumMinimorum)
+            )
+        )
+    );
+
+    // Création de la deuxième colonne
+    var col2 = $('<div>').addClass('col-md-3 col-sm-4').append(
+        $('<center>').append(
+            $('<div>').addClass('panel panel-default').append(
+                $('<div>').addClass('panel-heading').text('Matrice des Regrets'),
+                $('<div>').addClass('panel-body').attr('id', regretID),
+                $('<br><div>').addClass('panel-footer').text('Nouvelle matrice des coûts réduites')
+            )
+        )
+    );
+
+    // Création des deux colonnes pour les graphiques
+    var col3 = $('<div>').addClass('col-md-3 col-sm-4 text-center no-boder panel-vis-graph').attr('id', cheminID);
+    var col4 = $('<div>').addClass('col-md-3 col-sm-4 text-center no-boder panel-vis-graph').attr('id', arbreID);
+
+    // Création de la rangée // Classe pour centrer verticalement  : align-items-center
+    var row = $('<div>').addClass('row').attr('id', 'row').append(col1, col2, col3, col4);
+    $('#stepBystep').append(row, $('<br>'));
+    var matriceCoutReduites = afficheCoutReduitesSurHTML(coutReduites, arcParasite);
+    var matriceSupprimerMaximumMinimorum = afficheSuppressionMaximumMinimorumSurHTML(coutReduites, arcParasite, arcMaximumMinimorum);
+    var regret = afficherRegretSurtHTML(matriceRegret, arcMaximumMinimorum);
+    var nouvelleMCR = afficheNouvelleCoutReduitesSurHTML(nouvelleMatriceDesCoutReduites);
+    $('#' + coutReduitesID).append(matriceCoutReduites);
+    $('#' + coutReduitesID).append(descriptionMCR);
+    $('#' + coutReduitesID).append(matriceSupprimerMaximumMinimorum);
+    $('#' + regretID).append(regret);
+    $('#' + regretID).append(descriptionR);
+    $('#' + regretID).append(nouvelleMCR);
+    tracerGrapheChemin(arcSolution, valeurArc, noued, cheminID);
+    tracerGrapheArbre(arbre, arbreID);
+}
+
+
+//JQUERY
 $(document).ready(function () {
     //$('#supprimerVille,#ajouterVille').hide();
-    $('#boutonControlePvc,#resoudrepvc,.affichageGraphe, .conteneur-graphe').hide();
+    $('#boutonControlePvc,#resoudrepvc, #stepBystep').hide();
     $('#creertab').click(function () {
         var tailleMatrice = parseInt($('#tailleMatricePvc').val());
         if (!isNaN(tailleMatrice) && tailleMatrice > 0) {
@@ -759,21 +945,23 @@ $(document).ready(function () {
         }
     });
 
+    //Résoudre le problème de Voyageur de commerce et affiche le  graphe assoicier
+    $('#resoudrepvc').click(function () {
+        $('#stepBystep').empty();
+        let matricePVC = prendreValeurTableauHTML();
+        let resultat = main(matricePVC);
+        $("#coutMinimal").text(resultat.racine.toString());
+        $('#stepBystep').show();
+    });
+
+    //Recréer une nouvelle tableau de donnée 
     $('#recreerPvc').click(function () {
-        $('#boutonControlePvc,#resoudrepvc,#matricepvc').hide();
-        $('.affichageGraphe, .conteneur-graphe').empty();
-        $('.affichageGraphe, .conteneur-graphe').hide();
+        $('#boutonControlePvc,#resoudrepvc,#matricepvc,#stepBystep').hide();
         $("#coutMinimal").text(0);
         $('#creerPvc').show();
     });
 
-    $('#resoudrepvc').click(function () {
-        let matricePVC = prendreValeurTableauHTML();
-        let resultat = main(matricePVC);
-        $("#coutMinimal").text(resultat.racine.toString());
-        $('.affichageGraphe, .conteneur-graphe').show();
-    });
-
+    // Ajouter une Nouvelle ville
     $('#ajouterVille').click(function () {
         let matricePVC = prendreValeurTableauHTML();
         var matricepvcTable = ajouterUneNouvelleVille(matricePVC);
@@ -782,6 +970,7 @@ $(document).ready(function () {
         remplirListVille(matricePVC[0].slice(1));
     });
 
+    //Supprimer une ville donnée
     $('#supprimerVille').click(function () {
         let matricePVC = prendreValeurTableauHTML();
         if (matricePVC.length === 3) {
@@ -794,6 +983,4 @@ $(document).ready(function () {
         }
 
     });
-
-
 });

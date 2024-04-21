@@ -22,12 +22,6 @@ body {
     width: 70%;
 }
 
-#network1,
-#network2 {
-    width: 50%;
-    height: 100%;
-}
-
 .boutonTableau {
     float: right;
 }
@@ -64,7 +58,7 @@ body {
 
 .panel-vis-graph {
     width: 100%;
-    height: 400px;
+    height: 500px;
     border-radius: 10px;
     background-color: #FFF;
     overflow: hidden;
@@ -134,8 +128,55 @@ body {
 
 table {
     padding: 0, 0, 0, 0;
-    border: 1px black solid;
     background-color: #FFF;
+}
+
+td,
+th {
+    border: 1.5px solid black;
+    width: 50px;
+    height: 50px;
+    text-align: center;
+}
+
+.LigneColonne {
+    font-weight: bolder;
+    border: none;
+}
+
+.maximumMinimorum {
+    background-color: #97c2fc;
+}
+
+.valeurInfinie {
+    background-color: #959596;
+}
+
+.panel-footer {
+    text-align: center;
+}
+
+.valeurRouge {
+    color: red;
+}
+
+.parasite {
+    background-color: rgb(56, 65, 249);
+}
+
+.supprimerCellule {
+    border: none;
+    background: none;
+}
+
+#row {
+    background-color: #FFFFFF;
+    border-radius: 15px;
+    box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.5);
+}
+
+.transport {
+    box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.5);
 }
 
 @media(max-width:480px) {
