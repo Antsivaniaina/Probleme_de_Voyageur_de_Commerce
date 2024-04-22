@@ -158,6 +158,7 @@ th {
 
 .valeurRouge {
     color: red;
+    font-weight: bold;
 }
 
 .parasite {
@@ -166,7 +167,7 @@ th {
 
 .supprimerCellule {
     border: none;
-    background: none;
+    background: rgb(251, 137, 137);
 }
 
 #row {
