@@ -149,7 +149,7 @@ th {
 }
 
 .valeurInfinie {
-    background-color: #959596;
+    background-color: #e2e2ea;
 }
 
 .panel-footer {
@@ -163,6 +163,8 @@ th {
 
 .parasite {
     background-color: rgb(56, 65, 249);
+    color: #FFFFFF;
+    font: bold 12px;
 }
 
 .supprimerCellule {

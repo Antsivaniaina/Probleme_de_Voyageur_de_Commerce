@@ -329,14 +329,14 @@ function tracerGrapheArbre(donnee, id) {
     let arcarbre = [];
     let racineValue = donnee[0][1].valueSommet - donnee[0][1].valueArc;
     // Noeud racine
-    var racine = { id: 'R', label: 'R = ' + racineValue };
+    var racine = { id: 'R', label: 'R : ' + racineValue };
     let racineTemporaire = null;
     sommet.push(racine);
 
     for (let i = 0; i < donnee.length; i++) {
         for (let j = 0; j < donnee[i].length; j++) {
             let elem = donnee[i][j];
-            let node = { id: elem.arc, label: elem.arc + " = " + String(elem.valueSommet) };
+            let node = { id: elem.arc, label: elem.arc + " : " + String(elem.valueSommet) };
             sommet.push(node);
 
             let edge = { from: racine.id, to: elem.arc, label: String(elem.valueArc) };
@@ -396,16 +396,27 @@ function tracerGrapheArbre(donnee, id) {
     new vis.Network(container, data, options);
 }
 
-//TRACER GRAPHE CHEMIN
+//TRACER GRAPHE CHEMIN VIS JS
 function tracerGrapheChemin(arcsSolution, valeursDesArcs, noeuds, id, parasite) {
 
     var edgesArray = [];
 
     arcsSolution.forEach(function (edge, index) {
+        //edgesArray.push({ from: edge[0], to: edge[1] });
         edgesArray.push({ from: edge[0], to: edge[1], label: String(valeursDesArcs[index]), arrows: "to" });
     });
 
+    if (parasite != null) {
+        edgesArray.push({ from: parasite[0], to: parasite[1], label: 'Parasite', arrows: "to", color: { background: 'red' } });
+    }
+
     var nodesArray = noeuds.map(function (node) {
+        /*
+         var size = new go.Size(width, height);
+          size.height = size.width;
+          var figure = 'Ellipse';
+           return {key: node, text: node,figure: figure,size: size};
+        */
         return { id: node, label: node };
     });
 
@@ -423,10 +434,105 @@ function tracerGrapheChemin(arcsSolution, valeursDesArcs, noeuds, id, parasite) 
         },
     };
 
+    //myDiagram.model.nodeDataArray = nodeArray;
+    // myDiagram.model.linkDataArray = edgesArray;
     var container = document.getElementById(id);
     new vis.Network(container, graphData, options);
 }
 
+//TRACER GRAPHE CHEMIN GO JS
+function tracerGrapheCheminGo(solution, valeursDesArcs, noeuds, id, parasite) {
+    let arcsSolution = solution.slice();
+    arcsSolution.push(parasite);
+    const goJS = go.GraphObject.make;
+
+    var graphe = new go.Diagram(
+        id,
+        {
+            initialAutoScale: go.AutoScale.UniformToFill,
+            layout: goJS(go.CircularLayout),
+        }
+    );
+
+    //Style des noeuds
+    graphe.nodeTemplate = goJS(go.Node,
+        'Spot',
+        { locationSpot: go.Spot.Center },
+        new go.Binding('text', 'text'),
+        goJS(go.Shape,
+            'Ellipse',
+            {
+                fill: 'lightgray',
+                stroke: null,
+                desiredSize: new go.Size(40, 40),
+            },
+            /*    new go.Binding('figure', 'figure'),
+                new go.Binding('fill', 'fill'),
+                new go.Binding('desiredSize', 'size')*/
+        ),
+        goJS(go.TextBlock, new go.Binding('text', 'text'))
+    );
+
+    //Style des liens
+    graphe.linkTemplate = goJS(
+        go.Link,
+        { curve: go.Curve.Bezier, toShortLength: 1 },
+        goJS(
+            go.Shape,
+            {
+                strokeWidth: 1.5,
+            },
+            new go.Binding("stroke", "parasite", val => (val ? "red" : "black"))
+        ),
+        goJS(
+            go.Shape,
+            {
+                toArrow: "Standard",
+                scale: 1
+            },
+            new go.Binding("stroke", "parasite", val => (val ? "red" : "black"))
+        ),
+        goJS(
+            go.TextBlock,
+            new go.Binding("text", "text"),
+            new go.Binding("stroke", "parasite", val => (val ? "red" : "black")),
+            { segmentOffset: new go.Point(0, -15) }
+        )
+    );
+
+    //Remplissage des noeuds et ARCS
+    graphe.startTransaction('generateCircle');
+
+    var nodesArray = noeuds.map(function (node) {
+        return { key: node, text: node };
+
+    });
+
+    var edgesArray = [];
+    arcsSolution.forEach(function (edge, index) {
+        let valParasite = edge === parasite ? true : false;
+        edgesArray.push({ from: edge[0], to: edge[1], text: valeursDesArcs[index], parasite: valParasite });
+    });
+
+    /*if (parasite != null) {
+        edgesArray.push({ from: edge[0], to: edge[1] });
+    }*/
+    graphe.startTransaction('change Layout');
+    var lay = graphe.layout;
+    lay.aspectRatio = 1;
+    lay.startAngle = -180;
+    lay.sweepAngle = 360;
+    lay.spacing = 60;
+    lay.arrangement = go.CircularArrangement.ConstantDistance;
+    lay.nodeDiameterFormula = go.CircularNodeDiameterFormula.Pythagorean;
+    lay.direction = go.CircularDirection.Clockwise;
+    lay.sorting = go.CircularSorting.Forwards;
+    graphe.commitTransaction('change Layout');
+    graphe.commitTransaction('generateCircle');
+
+    //Afficher la graphe
+    graphe.model = new go.GraphLinksModel(nodesArray, edgesArray);
+}
 
 //PRENDRE LES VALEURS DES ARCS DE LA SOLUTION DANS LA MATRICE INITIAL
 function prendreValeursArcs(matriceInitial, solution) {
@@ -622,16 +728,21 @@ function createTableauPvcHTML(nombreDeVille) {
 function afficheMatriceInitialSurHTML(pvc) {
     let copiePVC = pvc.map(row => row.slice());
     var table = document.createElement("table");
-    copiePVC.forEach(function (ligne) {
+    copiePVC.forEach(function (ligne, indiceLigne) {
         let row = document.createElement("tr");
-        ligne.forEach(function (cellData) {
+        ligne.forEach(function (cellData, indiceColonne) {
             let cell = document.createElement("td");
             if (typeof cellData == "string") {
                 cell.classList.add("LigneColonne");
             }
-            if (cellData === Infinity) {
-                cellData = '∞';
+            if (indiceLigne === indiceColonne && indiceLigne != 0) {
+
                 cell.classList.add("valeurInfinie");
+            }
+            if (cellData === Infinity) {
+                //cellData = '∞';
+                cellData = '';
+                //cell.classList.add("valeurInfinie");
             }
             cell.textContent = cellData;
             row.appendChild(cell);
@@ -662,9 +773,12 @@ function afficheMinimumParLigneSurHTML(pvc, min) {
                 if (typeof copiePVC[i][j] === "string") {
                     cell.classList.add("LigneColonne");
                 }
-                if (copiePVC[i][j] === Infinity) {
-                    copiePVC[i][j] = '∞';
+                if (i === j && i != 0) {
+                    copiePVC[i][j] = '';
                     cell.classList.add("valeurInfinie");
+                }
+                if (copiePVC[i][j] === Infinity) {
+                    copiePVC[i][j] = '';
                 }
                 cell.textContent = copiePVC[i][j];
             }
@@ -695,9 +809,12 @@ function afficheMinimumParColonneSurHTML(pvc, min) {
                 if (typeof copiePVC[i][j] === "string") {
                     cell.classList.add("LigneColonne");
                 }
-                if (copiePVC[i][j] === Infinity) {
-                    copiePVC[i][j] = '∞';
+                if (i === j && i != 0) {
+                    copiePVC[i][j] = '';
                     cell.classList.add("valeurInfinie");
+                }
+                if (copiePVC[i][j] === Infinity) {
+                    copiePVC[i][j] = '';
                 }
                 cell.textContent = copiePVC[i][j];
             }
@@ -709,33 +826,28 @@ function afficheMinimumParColonneSurHTML(pvc, min) {
 }
 
 //Afficher Matrice des Cout réduites sur HTML
-function afficheCoutReduitesSurHTML(matrice, parasite) {
+function afficheCoutReduitesSurHTML(matrice) {
     let copieMatriceDesCoutReduites = matrice.map(row => row.slice());
     var table = document.createElement("table");
-    let source, dest = null;
-    if (!(parasite === null)) {
-        [source, dest] = parasite.split('');
-    }
-    let destIndice = copieMatriceDesCoutReduites[0].indexOf(dest);
-    copieMatriceDesCoutReduites.forEach(function (ligne, indiceLigne) {
+
+    copieMatriceDesCoutReduites.forEach(function (ligne) {
         let row = document.createElement("tr");
-        let sourceIndice = ligne[0] === source ? indiceLigne : null;
-        ligne.forEach(function (cellData, indiceColonne) {
+        ligne.forEach(function (cellData) {
             let cell = document.createElement("td");
             if (typeof cellData == "string") {
                 cell.classList.add("LigneColonne");
             }
             if (cellData === Infinity) {
-                cellData = '∞';
+                cellData = '';
                 cell.classList.add("valeurInfinie");
             }
             if (cellData === -Infinity) {
                 cellData = '';
             }
-            if (indiceLigne === sourceIndice && indiceColonne === destIndice) {
+            /*if (indiceLigne === sourceIndice && indiceColonne === destIndice) {
                 cell.classList.add("parasite");
                 cellData = '∞';
-            }
+            }*/
             if (cellData === 0) {
                 cell.classList.add("valeurRouge");
             }
@@ -752,15 +864,17 @@ function afficheCoutReduitesSurHTML(matrice, parasite) {
 function afficheNouvelleCoutReduitesSurHTML(matrice) {
     let copieMatriceDesCoutReduites = matrice.map(row => row.slice());
     var table = document.createElement("table");
-    copieMatriceDesCoutReduites.forEach(function (ligne) {
+    copieMatriceDesCoutReduites.forEach(function (ligne, indiceLigne) {
         let row = document.createElement("tr");
-        ligne.forEach(function (cellData) {
+        ligne.forEach(function (cellData, indiceColonne) {
             let cell = document.createElement("td");
             if (typeof cellData == "string") {
                 cell.classList.add("LigneColonne");
             }
             if (cellData === Infinity) {
-                cellData = '∞';
+                cellData = '';
+            }
+            if (indiceLigne === indiceColonne && indiceLigne != 0) {
                 cell.classList.add("valeurInfinie");
             }
             if (cellData === -Infinity) {
@@ -778,7 +892,7 @@ function afficheNouvelleCoutReduitesSurHTML(matrice) {
     return table;
 }
 
-//Suppresion du Maximum Minimorum sur HTML
+//Suppression du Maximum Minimorum sur HTML
 function afficheSuppressionMaximumMinimorumSurHTML(matrice, parasite, maximumMinimorum) {
     let copieMatriceDesCoutReduites = matrice.map(row => row.slice());
     var table = document.createElement("table");
@@ -799,7 +913,7 @@ function afficheSuppressionMaximumMinimorumSurHTML(matrice, parasite, maximumMin
                 cell.classList.add("LigneColonne");
             }
             if (cellData === Infinity) {
-                cellData = '∞';
+                cellData = '';
                 cell.classList.add("valeurInfinie");
             }
             if (cellData === -Infinity) {
@@ -858,6 +972,7 @@ function afficherRegretSurtHTML(matrice, maximumMinimorum) {
 
     return table;
 }
+
 //AJOUTER UNE NOUVELLE VILLE {NOUVELLE LIGNE ET COLONNE } SUR LE TABLEAU HTML
 function ajouterUneNouvelleVille(matricePvc) {
     const nbLignes = matricePvc.length;
@@ -963,7 +1078,7 @@ function remplirListVille(tableauVille) {
         selectVille.append($("<option></option>").attr("value", ville).text(ville));
     });
 }
-//AFFCHAGE STEP BY STEP
+//AFFICHAGE FIRST STEP BY STEP
 function affichageFirstStep(matriceInitial, miniLi, miniCo, soustraitLigne, soustraitColonne, racineValue) {
     // Création de la première colonne
     var col1 = $('<div>').addClass('col-md-3 col-sm-4').append(
@@ -1020,16 +1135,16 @@ function affichageFirstStep(matriceInitial, miniLi, miniCo, soustraitLigne, sous
     $('#soustraitLigne').append(minimumParLigne);
     $('#soustraitColonne').append(minimumParColonne);
     $('#coutReduites').append(cout);
+    row.hide().fadeIn(3000);
 }
 
-//AFFCHAGE STEP BY STEP
+//AFFICHAGE STEP BY STEP
 function affichageStepByStep(nouvelleMatriceDesCoutReduites, coutReduites, arcParasite, matriceRegret, arcMaximumMinimorum, arcSolution, valeurArc, noued, arbre, valID) {
     let cheminID = 'chemin' + valID.toString();
     let arbreID = 'arbre' + valID.toString();
     let coutReduitesID = 'matricesDesCoutsReduits' + valID.toString();
     let regretID = 'matricesDesRegrets' + valID.toString();
     arcParasite = arcParasite === null ? 'Aucune' : arcParasite;
-    var descriptionMCR = $('<br><span>').text('Bloquer l\'arc parasite : ' + arcParasite);
     var descriptionR = $('<br><span>').text('Maximum Minimorum : ' + arcMaximumMinimorum);
 
     // Création de la première colonne
@@ -1038,7 +1153,7 @@ function affichageStepByStep(nouvelleMatriceDesCoutReduites, coutReduites, arcPa
             $('<div>').addClass('panel panel-default').append(
                 $('<div>').addClass('panel-heading').text('Matrice des coûts réduites'),
                 $('<div>').addClass('panel-body').attr('id', coutReduitesID),
-                $('<br><div>').addClass('panel-footer').text('Suppression de l\'arc : ' + arcMaximumMinimorum)
+                $('<br><div>').addClass('panel-footer').text('Suppression de l\'arc : ' + arcMaximumMinimorum + '\n Bloquer l\'arc parasite : ' + arcParasite)
             )
         )
     );
@@ -1055,30 +1170,38 @@ function affichageStepByStep(nouvelleMatriceDesCoutReduites, coutReduites, arcPa
     );
 
     // Création des deux colonnes pour les graphiques
-    var col3 = $('<div>').addClass('col-md-3 col-sm-4 text-center no-boder panel-vis-graph').attr('id', cheminID);
+    var col3 = $('<div>').addClass('col-md-3 col-sm-4').append(
+        $('<center>').append(
+            $('<div>').addClass('panel panel-default').append(
+                //$('<div>').addClass('panel-heading').text('Matrice des Regrets'),
+                $('<div>').addClass('panel-body no-boder panel-vis-graph').attr('id', cheminID),
+                $('<br><div>').addClass('panel-footer').text('Arc parasite : ' + arcParasite)
+            )
+        )
+    );
+
     var col4 = $('<div>').addClass('col-md-3 col-sm-4 text-center no-boder panel-vis-graph').attr('id', arbreID);
 
     // Création de la rangée // Classe pour centrer verticalement  : align-items-center
     var row = $('<div>').addClass('row').attr('id', 'row').append(col1, col2, col3, col4);
     $('#stepBystep').append(row, $('<br>'));
-    var matriceCoutReduites = afficheCoutReduitesSurHTML(coutReduites, arcParasite);
+    var matriceCoutReduites = afficheCoutReduitesSurHTML(coutReduites);
     var matriceSupprimerMaximumMinimorum = afficheSuppressionMaximumMinimorumSurHTML(coutReduites, arcParasite, arcMaximumMinimorum);
     var regret = afficherRegretSurtHTML(matriceRegret, arcMaximumMinimorum);
-    var nouvelleMCR = afficheNouvelleCoutReduitesSurHTML(nouvelleMatriceDesCoutReduites);
+    var nouvelleMCR = afficheCoutReduitesSurHTML(nouvelleMatriceDesCoutReduites);
     $('#' + coutReduitesID).append(matriceCoutReduites);
-    $('#' + coutReduitesID).append(descriptionMCR);
+    $('#' + coutReduitesID).append($('<br>'));
     $('#' + coutReduitesID).append(matriceSupprimerMaximumMinimorum);
     $('#' + regretID).append(regret);
     $('#' + regretID).append(descriptionR);
     $('#' + regretID).append(nouvelleMCR);
-    tracerGrapheChemin(arcSolution, valeurArc, noued, cheminID);
+    tracerGrapheCheminGo(arcSolution, valeurArc, noued, cheminID, arcParasite);
     tracerGrapheArbre(arbre, arbreID);
+    row.hide().slideDown(2000 * valID);
 }
-
 
 //JQUERY
 $(document).ready(function () {
-    //$('#supprimerVille,#ajouterVille').hide();
     $('#boutonControlePvc,#resoudrepvc, #stepBystep,.conteneur-graphe').hide();
     $('#creertab').click(function () {
         let tailleMatrice = parseInt($('#tailleMatricePvc').val());
@@ -1095,7 +1218,7 @@ $(document).ready(function () {
         }
     });
 
-    //Résoudre le problème de Voyageur de commerce et affiche le  graphe assoicier
+    //Résoudre le problème de Voyageur de commerce et affiche le  graphe associer
     $('#resoudrepvc').click(function () {
         $('#stepBystep').empty();
         let matricePVC = prendreValeurTableauHTML();
